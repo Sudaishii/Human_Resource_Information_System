@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Label } from '@radix-ui/react-label'; // Radix Label for accessible form labeling
 import { Link } from 'react-router-dom';
+import { EyeOpenIcon, EyeClosedIcon } from '@radix-ui/react-icons';
 import logo from '../assets/Logo.png';
 import '../styles/Login.css';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -49,16 +51,26 @@ const LoginPage = () => {
               <Label htmlFor="password" className="login-label">
                 Password
               </Label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="login-input"
-                placeholder="Enter your password"
-              />
+              <div className="password-input-container">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="login-input"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeClosedIcon /> : <EyeOpenIcon />}
+                </button>
+              </div>
             </div>
 
             {/* Forgot Password Link */}
@@ -91,8 +103,9 @@ const LoginPage = () => {
               </button>
             </div>
 
-            {/* Continue with Google */}
-            <div>
+            {/* Or Continue with Google */}
+            <div className="login-or-section">
+              <div className="login-or">or</div>
               <button
                 type="button"
                 className="login-google-btn"
