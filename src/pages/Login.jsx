@@ -29,20 +29,20 @@ const LoginPage = () => {
 
           {/* Login Form */}
           <form className="login-form" onSubmit={handleSubmit}>
-            {/* Email Field */}
+            {/* Email/Username Field */}
             <div className="login-field">
               <Label htmlFor="email" className="login-label">
-                Email address
+                Email or Username
               </Label>
               <input
                 id="email"
                 name="email"
-                type="email"
+                type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="login-input"
-                placeholder="Enter your email"
+                placeholder="Enter your email or username"
               />
             </div>
 

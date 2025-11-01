@@ -242,7 +242,15 @@ const RegisterPage = () => {
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (e.target.value === '') {
+                      setErrors((prev) => ({ ...prev, password: null }));
+                    } else {
+                      const result = validation.validatePassword(e.target.value);
+                      setErrors((prev) => ({ ...prev, password: result.isValid ? null : result.error }));
+                    }
+                  }}
                   className="register-input"
                   placeholder="Enter your password"
                 />
