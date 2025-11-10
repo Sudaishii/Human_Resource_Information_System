@@ -1,19 +1,87 @@
 import React, { useState } from 'react';
 import { Label } from '@radix-ui/react-label'; // Radix Label for accessible form labeling
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { EyeOpenIcon, EyeClosedIcon } from '@radix-ui/react-icons';
 import logo from '../assets/Logo.png';
 import '../styles/Login.css';
+import { supabase } from '../services/supabase-client';
+import bcrypt from 'bcryptjs';
+import Toast from '../components/Toast';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isToastOpen, setIsToastOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastVariant, setToastVariant] = useState('success');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle login logic here (e.g., API call)
-    console.log('Login attempt:', { email, password });
+
+    // Fetch user with status and role information
+    const { data: userData, error } = await supabase
+      .from('users')
+      .select(`
+        *,
+        user_status:status_id (
+          status_id,
+          status_name
+        ),
+        user_role:role_id (
+          role_id,
+          role_name
+        )
+      `)
+      .eq('user_email', email)
+      .single();
+
+    if (error || !userData) {
+      setToastMessage('Invalid email or password.');
+      setToastVariant('error');
+      setIsToastOpen(true);
+      return;
+    }
+
+    // Check if user is active using the status name
+    if (userData.user_status?.status_name !== 'Active') {
+      setToastMessage('Your account is not active. Please contact support.');
+      setToastVariant('error');
+      setIsToastOpen(true);
+      return;
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, userData.password);
+    if (!isPasswordValid) {
+      setToastMessage('Invalid email or password.');
+      setToastVariant('error');
+      setIsToastOpen(true);
+      return;
+    }
+
+    // Successful login
+    setToastMessage('Login successful! Redirecting...');
+    setToastVariant('success');
+    setIsToastOpen(true);
+
+    // Redirect based on role name
+    setTimeout(() => {
+      const roleName = userData.user_role?.role_name;
+      if (roleName === 'HR_Manager') {
+        navigate('/dashboard-hr');
+      } else if (roleName === 'Employee') {
+        navigate('/dashboard-employee'); // Assuming this route exists or will be created
+      } else {
+        // Unknown role, default to HR dashboard
+        navigate('/dashboard-hr');
+      }
+    }, 2000);
+  };
+
+  const handleToastClose = () => {
+    setIsToastOpen(false);
   };
 
   return (
@@ -29,20 +97,20 @@ const LoginPage = () => {
 
           {/* Login Form */}
           <form className="login-form" onSubmit={handleSubmit}>
-            {/* Email/Username Field */}
+            {/* Email Field */}
             <div className="login-field">
               <Label htmlFor="email" className="login-label">
-                Email or Username
+                Email
               </Label>
               <input
                 id="email"
                 name="email"
-                type="text"
+                type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="login-input"
-                placeholder="Enter your email or username"
+                placeholder="Enter your email"
               />
             </div>
 
@@ -110,7 +178,7 @@ const LoginPage = () => {
                 type="button"
                 className="login-google-btn"
               >
-                <span className="google-logo">G</span>
+                <img src="../assets/icons8-google-48.png" alt="Google" className="google-logo" />
                 Continue with Google
               </button>
             </div>
@@ -134,6 +202,13 @@ const LoginPage = () => {
           </form>
         </div>
       </div>
+
+      <Toast
+        isOpen={isToastOpen}
+        onClose={handleToastClose}
+        message={toastMessage}
+        variant={toastVariant}
+      />
     </div>
   );
 };

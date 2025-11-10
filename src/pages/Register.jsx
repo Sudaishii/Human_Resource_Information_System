@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Label } from '@radix-ui/react-label';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { EyeOpenIcon, EyeClosedIcon } from '@radix-ui/react-icons';
 import logo from '../assets/Logo.png';
 import '../styles/Register.css';
 import { supabase } from '../services/supabase-client';
 import * as validation from '../utils/validation';
 import bcrypt from 'bcryptjs';
-import DynamicAlertDialog from '../components/DynamicAlertDialog';
+import Toast from '../components/Toast';
 
 
 
 const RegisterPage = () => {
-  const [username, setUsername] = useState('');
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -21,9 +21,9 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [shakeFields, setShakeFields] = useState({});
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [dialogMessage, setDialogMessage] = useState('');
-  const [dialogVariant, setDialogVariant] = useState('success');
+  const [isToastOpen, setIsToastOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastVariant, setToastVariant] = useState('success');
 
   const hasErrors = Object.keys(errors).some(key => errors[key] && key !== 'general');
 
@@ -32,26 +32,7 @@ const RegisterPage = () => {
   }, []);
 
   
-  useEffect(() => {
-    if (!username) {
-      setErrors((prev) => ({ ...prev, username: null }));
-      setShakeFields((prev) => ({ ...prev, username: false }));
-      return;
-    }
 
-    const timer = setTimeout(async () => {
-      const result = await validation.existingUsername(username);
-      if (!result.isValid) {
-        setErrors((prev) => ({ ...prev, username: result.error }));
-        setShakeFields((prev) => ({ ...prev, username: true }));
-        setTimeout(() => setShakeFields((prev) => ({ ...prev, username: false })), 500);
-      } else {
-        setErrors((prev) => ({ ...prev, username: null }));
-        setShakeFields((prev) => ({ ...prev, username: false }));
-      }
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [username]);
 
   useEffect(() => {
     if (!email) {
@@ -73,6 +54,23 @@ const RegisterPage = () => {
     }, 500);
     return () => clearTimeout(timer);
   }, [email]);
+
+  useEffect(() => {
+    if (confirmPassword === '') {
+      setErrors((prev) => ({ ...prev, confirmPassword: null }));
+      setShakeFields((prev) => ({ ...prev, confirmPassword: false }));
+      return;
+    }
+
+    if (confirmPassword !== password) {
+      setErrors((prev) => ({ ...prev, confirmPassword: 'Passwords do not match' }));
+      setShakeFields((prev) => ({ ...prev, confirmPassword: true }));
+      setTimeout(() => setShakeFields((prev) => ({ ...prev, confirmPassword: false })), 500);
+    } else {
+      setErrors((prev) => ({ ...prev, confirmPassword: null }));
+      setShakeFields((prev) => ({ ...prev, confirmPassword: false }));
+    }
+  }, [confirmPassword, password]);
 
 
 
@@ -101,13 +99,7 @@ const RegisterPage = () => {
       return;
     }
 
-    const usernameResult = validation.validateUsername(username);
-    if (!usernameResult.isValid) {
-      setErrors({ username: usernameResult.error });
-      setShakeFields({ username: true });
-      setTimeout(() => setShakeFields({}), 500);
-      return;
-    }
+
 
     const emailResult = validation.validateEmail(email);
     if (!emailResult.isValid) {
@@ -142,14 +134,13 @@ const RegisterPage = () => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('users')
       .insert([
         {
-          user_name: username,
           user_email: email,
-          user_pass: hashedPassword,
-          status_id: 1,
+          password: hashedPassword,
+          status_id: 2,
           role_id: 2,
           emp_id: null,
           created_at: new Date().toISOString()
@@ -157,18 +148,17 @@ const RegisterPage = () => {
       ]);
 
     if (error) {
-      setDialogMessage('Registration failed. Please try again.');
-      setDialogVariant('error');
-      setIsDialogOpen(true);
+      setToastMessage('Registration failed. Please try again.');
+      setToastVariant('error');
+      setIsToastOpen(true);
       return;
     }
 
-    setDialogMessage('You are now registered!');
-    setDialogVariant('success');
-    setIsDialogOpen(true);
+    setToastMessage('You are now registered!');
+    setToastVariant('success');
+    setIsToastOpen(true);
 
     // Clear the form after successful registration
-    setUsername('');
     setEmail('');
     setPassword('');
     setConfirmPassword('');
@@ -178,10 +168,15 @@ const RegisterPage = () => {
     setErrors({});
     setShakeFields({});
 
+    // Redirect to login page after a short delay
+    setTimeout(() => {
+      navigate('/login');
+    }, 2000);
+
   };
 
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
+  const handleToastClose = () => {
+    setIsToastOpen(false);
   };
 
   return (
@@ -197,22 +192,7 @@ const RegisterPage = () => {
 
           <form className="register-form" onSubmit={handleSubmit}>
 
-            <div className={`register-field ${shakeFields.username ? 'shake' : ''}`}>
-              <Label htmlFor="username" className="register-label">
-                Username
-              </Label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="register-input"
-                placeholder="Enter your username"
-              />
-              {errors.username && <p className="error-message">{errors.username}</p>}
-            </div>
+
 
             <div className={`register-field ${shakeFields.email ? 'shake' : ''}`}>
               <Label htmlFor="email" className="register-label">
@@ -342,11 +322,11 @@ const RegisterPage = () => {
         </div>
       </div>
 
-      <DynamicAlertDialog
-        isOpen={isDialogOpen}
-        onClose={handleDialogClose}
-        message={dialogMessage}
-        variant={dialogVariant}
+      <Toast
+        isOpen={isToastOpen}
+        onClose={handleToastClose}
+        message={toastMessage}
+        variant={toastVariant}
       />
     </div>
   );

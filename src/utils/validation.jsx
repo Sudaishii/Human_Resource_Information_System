@@ -14,16 +14,11 @@ export const validatePassword = (password) => {
   return { isValid: true, error: null };
 };
 
-export const validateUsername = (username) => {
-  if (!/^[a-zA-Z0-9_]{3,}$/.test(username)) {
-    return { isValid: false, error: 'Username must be at least 3 characters and contain only letters, numbers, or underscores' };
-  }
-  return { isValid: true, error: null };
-};
+
 
 export const existingEmail = async (email) => {
 
-  const { data: emailData, error } = await supabase 
+  const { data: emailData } = await supabase
     .from('users')
     .select('user_email')
     .eq('user_email', email)
@@ -39,21 +34,5 @@ export const existingEmail = async (email) => {
   };
 }
 
-export const existingUsername = async (username) => {
 
-  const { data: usernameData, error } = await supabase  
-    .from('users')
-    .select('user_name')
-    .eq('user_name', username)
-    .maybeSingle();   
-
-    if (usernameData) {
-      return { isValid: false, error: 'Username already exists' };
-    }
-
-    return { 
-      isValid: true, 
-      error: null 
-    };
-};
 
