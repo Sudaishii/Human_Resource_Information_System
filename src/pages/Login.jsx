@@ -21,21 +21,37 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Fetch user data
+    // Fetch user data with joined status and role information
     const { data: userData, error } = await supabase
       .from('users')
-      .select('*')
+      .select(`
+        id,
+        user_email,
+        password,
+        status_id,
+        role_id,
+        emp_id,
+        created_at,
+        email_verified,
+        verification_token,
+        user_status (
+          status_name
+        ),
+        roles (
+          role_name
+        )
+      `)
       .eq('user_email', email)
       .single();
 
-    if (error || !userData) {
+    if (error || !userData) { 
       setToastMessage('Invalid email or password.');
       setToastVariant('error');
       setIsToastOpen(true);
       return;
     }
 
-    // Check if user is active (status_id = 2)
+    // Check if user is active (status_id = 2 for Active)
     if (userData.status_id !== 2) {
       setToastMessage('Your account is not active. Please contact support.');
       setToastVariant('error');

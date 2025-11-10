@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const DashboardHR = () => {
+const DashboardEmployee = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -12,8 +11,8 @@ const DashboardHR = () => {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h1>HR Dashboard</h1>
-      <p>Welcome to the HR Management System</p>
+      <h1>Employee Dashboard</h1>
+      <p>Welcome to your Employee Portal</p>
       <button
         onClick={handleLogout}
         style={{
@@ -32,4 +31,4 @@ const DashboardHR = () => {
   );
 };
 
-export default DashboardHR;
+export default DashboardEmployee;
