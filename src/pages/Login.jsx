@@ -3,6 +3,7 @@ import { Label } from '@radix-ui/react-label'; // Radix Label for accessible for
 import { Link, useNavigate } from 'react-router-dom';
 import { EyeOpenIcon, EyeClosedIcon } from '@radix-ui/react-icons';
 import logo from '../assets/Logo.png';
+import googleIcon from '../assets/icons8-google-48.png';
 import '../styles/Login.css';
 import { supabase } from '../services/supabase-client';
 import bcrypt from 'bcryptjs';
@@ -20,20 +21,10 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Fetch user with status and role information
+    // Fetch user data
     const { data: userData, error } = await supabase
       .from('users')
-      .select(`
-        *,
-        user_status:status_id (
-          status_id,
-          status_name
-        ),
-        user_role:role_id (
-          role_id,
-          role_name
-        )
-      `)
+      .select('*')
       .eq('user_email', email)
       .single();
 
@@ -44,8 +35,8 @@ const LoginPage = () => {
       return;
     }
 
-    // Check if user is active using the status name
-    if (userData.user_status?.status_name !== 'Active') {
+    // Check if user is active (status_id = 2)
+    if (userData.status_id !== 2) {
       setToastMessage('Your account is not active. Please contact support.');
       setToastVariant('error');
       setIsToastOpen(true);
@@ -61,17 +52,27 @@ const LoginPage = () => {
       return;
     }
 
-    // Successful login
+    // Successful login - store session in localStorage
+    const userSession = {
+      user_email: userData.user_email,
+      status_id: userData.status_id,
+      role_id: userData.role_id,
+      emp_id: userData.emp_id,
+      id: userData.id
+    };
+    localStorage.setItem('userSession', JSON.stringify(userSession));
+
     setToastMessage('Login successful! Redirecting...');
     setToastVariant('success');
     setIsToastOpen(true);
 
-    // Redirect based on role name
+    // Redirect based on role_id
     setTimeout(() => {
-      const roleName = userData.user_role?.role_name;
-      if (roleName === 'HR_Manager') {
+      if (userData.role_id === 1) {
+        // HR_Manager
         navigate('/dashboard-hr');
-      } else if (roleName === 'Employee') {
+      } else if (userData.role_id === 2) {
+        // Employee
         navigate('/dashboard-employee'); // Assuming this route exists or will be created
       } else {
         // Unknown role, default to HR dashboard
@@ -178,7 +179,7 @@ const LoginPage = () => {
                 type="button"
                 className="login-google-btn"
               >
-                <img src="../assets/icons8-google-48.png" alt="Google" className="google-logo" />
+                <img src={googleIcon} alt="Google" className="google-logo" />
                 Continue with Google
               </button>
             </div>
