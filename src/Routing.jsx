@@ -2,10 +2,11 @@ import { Routes, Route } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import DashboardHR from './pages/DashboardHR';
+
 import DashboardEmployee from './pages/DashboardEmployee';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
+import PageHR from "./pages/PageHR";
 
 function Routing() {
   return (
@@ -31,7 +32,7 @@ function Routing() {
         path="/dashboard-hr"
         element={
           <ProtectedRoute allowedRoles={[1]}>
-            <DashboardHR />
+            <PageHR />
           </ProtectedRoute>
         }
       />
